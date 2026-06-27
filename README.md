@@ -318,27 +318,6 @@ Retrieve all campaigns and their posts.
 4. Copy this password (NOT your regular Gmail password)
 5. Add to `.env` file
 
----
-
-## 🎬 Demo / Portfolio Presentation
-
-### Loom Video Script (2-3 minutes)
-1. **Show the upload page** — Paste a blog post
-2. **Click Generate** — Show AI generating posts in real-time
-3. **Display results** — Organized by platform with edit buttons
-4. **Edit one post** — Change text, save it
-5. **Schedule a post** — Pick a date/time
-6. **Show dashboard** — View all campaigns and their status
-7. **Demonstrate API** — Optional: show backend API call in terminal
-
-### Screenshots to Include
-- Main interface with generated posts
-- Dashboard with campaign history
-- Scheduled posts waiting to go live
-- Terminal showing Flask running
-- n8n workflow (optional)
-
----
 
 ## 📦 Deployment Options
 
