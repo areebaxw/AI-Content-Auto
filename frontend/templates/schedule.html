@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="stack">
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Scheduling</p>
+        <h2>Queue posts for future publication</h2>
+      </div>
+      <p class="muted">Pick a post and time, then let APScheduler publish it automatically.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Select a post</h3>
+      <div id="schedule-post-list" class="post-list compact-list">
+        {% for campaign in campaigns %}
+          {% for post in campaign.posts %}
+            <button class="selectable-post" data-post-id="{{ post.id }}" data-platform="{{ post.platform }}" data-content='{{ post.edited_content|e }}'>
+              <span>{{ post.platform|title }}</span>
+              <small>#{{ post.id }} · {{ post.status }}</small>
+            </button>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Schedule selected post</h3>
+      <form id="schedule-form" class="stack-form">
+        <input type="hidden" id="schedule-post-id" name="post_id" />
+        <input type="hidden" id="schedule-platform" name="platform" />
+        <label for="scheduled-time">Scheduled time</label>
+        <input id="scheduled-time" name="scheduled_time" type="datetime-local" />
+        <button type="submit" class="primary-btn">Save schedule</button>
+      </form>
+      <p id="schedule-feedback" class="muted"></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

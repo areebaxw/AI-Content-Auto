@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="stack">
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Settings</p>
+        <h2>Runtime and platform configuration</h2>
+      </div>
+      <p class="muted">This view reflects local settings and environment defaults. API secrets stay in <code>.env</code>.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Enabled platforms</h3>
+      <ul class="settings-list">
+        <li>Twitter: {{ 'Enabled' if settings.enable_twitter else 'Disabled' }}</li>
+        <li>LinkedIn: {{ 'Enabled' if settings.enable_linkedin else 'Disabled' }}</li>
+        <li>Telegram: {{ 'Enabled' if settings.enable_telegram else 'Disabled' }}</li>
+        <li>Email: {{ 'Enabled' if settings.enable_email else 'Disabled' }}</li>
+        <li>Instagram: {{ 'Enabled' if settings.enable_instagram else 'Disabled' }}</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Stored preferences</h3>
+      <ul class="settings-list">
+        {% for key, value in app_settings.items() %}
+        <li><strong>{{ key }}</strong> <span>{{ value }}</span></li>
+        {% else %}
+        <li>No stored preferences yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

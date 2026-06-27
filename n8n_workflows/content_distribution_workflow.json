@@ -1,0 +1,48 @@
+{
+  "name": "Content Distribution Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "new-blog-post",
+        "responseMode": "onReceived",
+        "options": {},
+        "httpMethod": "POST"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chokehold-provider-shiftless.ngrok-free.dev/api/generate",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": "={{ { title: $json.title, content: $json.content } }}"
+      },
+      "id": "generate-posts",
+      "name": "Generate Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

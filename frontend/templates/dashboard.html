@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="stack">
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Campaign history</p>
+        <h2>Past campaigns and status</h2>
+      </div>
+      <p class="muted">Draft, scheduled, posted, and failed states are tracked locally in SQLite.</p>
+    </div>
+  </div>
+
+  {% for campaign in campaigns %}
+  <article class="card campaign-card">
+    <div class="campaign-head">
+      <div>
+        <h3>{{ campaign.title }}</h3>
+        <p class="muted">Created {{ campaign.created_at }} · Status {{ campaign.status }}</p>
+      </div>
+      <span class="pill">Campaign #{{ campaign.id }}</span>
+    </div>
+    <div class="post-list">
+      {% for post in campaign.posts %}
+      <div class="post-preview">
+        <div class="post-meta">
+          <strong>{{ post.platform|title }}</strong>
+          <span>{{ post.status }}</span>
+        </div>
+        <p>{{ post.edited_content or post.generated_content }}</p>
+        {% if post.post_url %}<a href="{{ post.post_url }}" target="_blank">Open post</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% else %}
+  <div class="card empty-state">No campaigns yet. Generate your first campaign from the Home page.</div>
+  {% endfor %}
+</section>
+{% endblock %}

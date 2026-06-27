@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-grid">
+  <div class="hero-copy card">
+    <p class="eyebrow">Repurpose once, distribute everywhere</p>
+    <h2>Turn one blog post into platform-specific content for Twitter, LinkedIn, Telegram, Email, and Instagram.</h2>
+    <p class="lead">Paste a blog post or upload a .txt file, generate variations with local AI, edit them in the browser, then schedule or post immediately.</p>
+    <div class="metric-row">
+      <div class="metric"><span>5</span><small>Twitter variants</small></div>
+      <div class="metric"><span>2</span><small>LinkedIn posts</small></div>
+      <div class="metric"><span>3</span><small>Telegram messages</small></div>
+    </div>
+  </div>
+
+  <div class="card form-card">
+    <form id="generate-form" enctype="multipart/form-data">
+      <label for="title">Campaign title</label>
+      <input id="title" name="title" type="text" placeholder="Launch announcement" />
+
+      <label for="content">Blog content</label>
+      <textarea id="content" name="content" rows="14" placeholder="Paste your article here..."></textarea>
+
+      <div class="file-row">
+        <label for="file">Or upload a text file</label>
+        <input id="file" name="file" type="file" accept=".txt,text/plain" />
+      </div>
+
+      <button type="submit" class="primary-btn">Generate Posts</button>
+    </form>
+  </div>
+</section>
+
+<section id="loading" class="loading card hidden">
+  <div class="spinner"></div>
+  <p>AI is generating platform-specific posts...</p>
+</section>
+
+<section id="results" class="results hidden">
+  <div class="results-header">
+    <h3>Generated Posts</h3>
+    <p>Edit any draft before you schedule or publish it.</p>
+  </div>
+  <div id="results-grid" class="results-grid"></div>
+</section>
+{% endblock %}
