@@ -17,7 +17,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://chokehold-provider-shiftless.ngrok-free.dev/api/generate",
+        "url": "http://localhost:5000/api/generate",
         "sendBody": true,
         "contentType": "application/json",
         "body": "={{ { title: $json.title, content: $json.content } }}"
