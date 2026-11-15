@@ -118,6 +118,25 @@ async function handleGenerateSubmit(event) {
   }
 
   renderPosts(data.posts, data.campaign_id, data.saved_posts || []);
+  showFallbackNotice(data);
+}
+
+function showFallbackNotice(data) {
+  const results = document.getElementById("results");
+  if (!results) return;
+  let notice = document.getElementById("fallback-notice");
+  if (!data.fallback_used) {
+    if (notice) notice.remove();
+    return;
+  }
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = "fallback-notice";
+    notice.setAttribute("role", "alert");
+    notice.style.cssText = "margin:0 0 16px;padding:12px 16px;border:1px solid #b45309;background:#fffbeb;color:#78350f;border-radius:8px;";
+    results.prepend(notice);
+  }
+  notice.textContent = "These are template drafts, not AI output. " + (data.fallback_reason || "The AI provider did not respond.");
 }
 
 function bindGenerateForm() {

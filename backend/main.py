@@ -9,7 +9,7 @@ from flask import Flask, jsonify, render_template, request
 from apscheduler.schedulers.background import BackgroundScheduler
 
 try:
-    from .ai_handler import generate_posts
+    from .ai_handler import generate_posts_with_meta
     from .api_handlers import post_to_platform
     from .config import settings
     from .database import (
@@ -30,7 +30,7 @@ try:
         update_post_content,
     )
 except ImportError:  # pragma: no cover - script execution fallback
-    from ai_handler import generate_posts
+    from ai_handler import generate_posts_with_meta
     from api_handlers import post_to_platform
     from config import settings
     from database import (
@@ -152,9 +152,9 @@ def api_generate():
         return jsonify({"error": "Content is required."}), 400
 
     campaign_id = save_campaign(title, content)
-    posts = generate_posts(content)
+    posts, generation = generate_posts_with_meta(content)
     created_posts = save_generated_posts(campaign_id, posts)
-    return jsonify({"campaign_id": campaign_id, "title": title, "posts": posts, "saved_posts": created_posts, "generated_posts": created_posts})
+    return jsonify({"campaign_id": campaign_id, "title": title, "posts": posts, "saved_posts": created_posts, "generated_posts": created_posts, **generation})
 
 
 @app.route("/api/schedule", methods=["POST"])
@@ -212,4 +212,4 @@ def api_settings():
 
 if __name__ == "__main__":
     bootstrap()
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
