@@ -1,0 +1,3 @@
+# Only needed when AI_PROVIDER=huggingface
+transformers==4.41.2
+torch==2.3.1

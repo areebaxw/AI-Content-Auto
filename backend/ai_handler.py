@@ -132,11 +132,84 @@ def generate_with_huggingface(original_content: str) -> Dict[str, Any]:
     }
 
 
-def generate_posts(original_content: str) -> Dict[str, Any]:
+SHARED_INSTRUCTIONS = (
+    "You are a social media expert. Turn the blog content into structured platform posts. "
+    "Return only valid JSON with keys twitter, linkedin, telegram, email, instagram. "
+    "Twitter should contain exactly 5 items. LinkedIn exactly 2. Telegram exactly 3. Instagram exactly 1. "
+    "Email must be an object with subject and body. Keep each item platform-appropriate."
+)
+
+EXPECTED_KEYS = ("twitter", "linkedin", "telegram", "email", "instagram")
+
+
+def _validate_posts(posts: Any) -> Dict[str, Any]:
+    """Reject model output that has none of the expected platform keys."""
+    if not isinstance(posts, dict) or not any(posts.get(key) for key in EXPECTED_KEYS):
+        raise ValueError("Model response did not contain any platform posts")
+    return posts
+
+
+def generate_with_openai(original_content: str) -> Dict[str, Any]:
+    """Generate with any OpenAI-compatible chat completions endpoint."""
+    if not settings.openai_api_key:
+        raise ValueError("OPENAI_API_KEY is not set")
+    payload = {
+        "model": settings.openai_model,
+        "messages": [
+            {"role": "system", "content": SHARED_INSTRUCTIONS},
+            {"role": "user", "content": f"Blog content:\n{original_content}"},
+        ],
+        "temperature": settings.generation_temperature,
+        "max_tokens": settings.generation_max_tokens,
+        "response_format": {"type": "json_object"},
+    }
+    response = requests.post(
+        f"{settings.openai_base_url.rstrip('/')}/chat/completions",
+        json=payload,
+        headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+        timeout=120,
+    )
+    response.raise_for_status()
+    raw_text = response.json()["choices"][0]["message"]["content"] or "{}"
+    return _clean_json_response(raw_text)
+
+
+def generate_posts_with_meta(original_content: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """Return (posts, meta). meta says which provider ran and whether template fallback was used."""
     provider = settings.ai_provider.lower()
+    meta: Dict[str, Any] = {"provider": provider, "fallback_used": False, "fallback_reason": None}
+
+    def _fallback(reason: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+        meta["fallback_used"] = True
+        meta["fallback_reason"] = reason
+        return _fallback_posts(original_content), meta
+
     if provider == "ollama":
         try:
-            return generate_with_ollama(original_content)
-        except Exception:
-            return _fallback_posts(original_content)
-    return generate_with_huggingface(original_content)
+            return _validate_posts(generate_with_ollama(original_content)), meta
+        except requests.exceptions.ConnectionError:
+            return _fallback(f"Could not reach Ollama at {settings.ollama_url}. Is it running?")
+        except Exception as exc:
+            return _fallback(f"Ollama generation failed: {exc}")
+
+    if provider == "openai":
+        try:
+            return _validate_posts(generate_with_openai(original_content)), meta
+        except Exception as exc:
+            return _fallback(f"OpenAI-compatible generation failed: {exc}")
+
+    if provider == "huggingface":
+        try:
+            import transformers  # noqa: F401
+        except ImportError:
+            return _fallback("transformers is not installed. Run: pip install -r backend/requirements-huggingface.txt")
+        try:
+            return generate_with_huggingface(original_content), meta
+        except Exception as exc:
+            return _fallback(f"HuggingFace generation failed: {exc}")
+
+    return _fallback(f"Unknown AI_PROVIDER '{provider}'. Use ollama, openai or huggingface.")
+
+
+def generate_posts(original_content: str) -> Dict[str, Any]:
+    return generate_posts_with_meta(original_content)[0]
