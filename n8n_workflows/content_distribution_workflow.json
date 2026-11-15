@@ -12,21 +12,29 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "new-blog-post"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://localhost:5000/api/generate",
         "sendBody": true,
-        "contentType": "application/json",
-        "body": "={{ { title: $json.title, content: $json.content } }}"
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: $json.body.title, content: $json.body.content }) }}",
+        "options": {}
       },
       "id": "generate-posts",
       "name": "Generate Posts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [520, 300]
+      "position": [
+        520,
+        300
+      ]
     }
   ],
   "connections": {
