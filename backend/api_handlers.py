@@ -42,9 +42,9 @@ def _dry_run(platform: str, content: str, message: str) -> PlatformResult:
     preview = content[:120].replace("\n", " ")
     return PlatformResult(
         platform=platform,
-        status="posted",
-        external_id=f"dry-run-{platform}",
-        post_url=f"https://example.com/{platform}/preview",
+        status="dry_run",
+        external_id=None,
+        post_url=None,
         dry_run=True,
         message=f"{message} Preview: {preview}",
     )
@@ -149,7 +149,7 @@ def send_email(subject: str, body: str, scheduled_time: Optional[str] = None) ->
 
 
 def draft_instagram(content: str, scheduled_time: Optional[str] = None) -> Dict[str, Any]:
-    return _dry_run("instagram", content, "Instagram is stored as a draft for manual posting.").as_dict()
+    return _dry_run("instagram", content, "Instagram has no publishing API here. Copy this caption and post it manually.").as_dict()
 
 
 def post_to_platform(platform: str, content: Any, scheduled_time: Optional[str] = None) -> Dict[str, Any]:

@@ -80,7 +80,7 @@ function renderPosts(posts, campaignId, savedPosts = []) {
           }),
         });
         const result = await response.json();
-        alert(result.post_url ? `Posted: ${result.post_url}` : result.status || "Completed");
+        alert(result.dry_run ? `Dry run: nothing was published. ${result.message || ""}` : result.post_url ? `Posted: ${result.post_url}` : result.status || "Completed");
       });
 
       group.appendChild(card);

@@ -173,6 +173,7 @@ def get_due_schedules(now_iso: str) -> List[Dict[str, Any]]:
             FROM schedules AS s
             JOIN generated_posts AS p ON p.id = s.post_id
             WHERE s.posted = 0 AND s.scheduled_time <= ?
+              AND COALESCE(s.status, 'pending') NOT IN ('dry_run', 'failed')
             ORDER BY s.scheduled_time ASC
             """,
             (now_iso,),

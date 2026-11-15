@@ -9,7 +9,7 @@ from flask import Flask, jsonify, render_template, request
 from apscheduler.schedulers.background import BackgroundScheduler
 
 try:
-    from .ai_handler import generate_posts_with_meta
+    from .ai_handler import enforce_limits, generate_posts_with_meta
     from .api_handlers import post_to_platform
     from .config import settings
     from .database import (
@@ -30,7 +30,7 @@ try:
         update_post_content,
     )
 except ImportError:  # pragma: no cover - script execution fallback
-    from ai_handler import generate_posts_with_meta
+    from ai_handler import enforce_limits, generate_posts_with_meta
     from api_handlers import post_to_platform
     from config import settings
     from database import (
@@ -110,6 +110,8 @@ def check_scheduled_posts() -> None:
             result = post_to_platform(platform, content)
             if result.get("status") == "posted":
                 mark_schedule_posted(schedule_id, post_id, result.get("post_url") or "")
+            elif result.get("dry_run"):
+                mark_schedule_attempt(schedule_id, "dry_run")
             else:
                 mark_post_failed(post_id, result.get("message") or "Scheduled post failed")
                 mark_schedule_attempt(schedule_id, "failed")
@@ -119,6 +121,20 @@ def check_scheduled_posts() -> None:
 
 
 bootstrap()
+
+
+@app.template_filter("readable")
+def readable(value: Any) -> str:
+    """Show an email stored as JSON as 'Subject: ...' followed by the body."""
+    text = str(value or "")
+    if text.startswith("{"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict) and "subject" in parsed:
+                return f"Subject: {parsed.get('subject', '')}\n\n{parsed.get('body', '')}"
+        except json.JSONDecodeError:
+            pass
+    return text
 
 
 @app.route("/")
@@ -155,6 +171,21 @@ def api_generate():
     posts, generation = generate_posts_with_meta(content)
     created_posts = save_generated_posts(campaign_id, posts)
     return jsonify({"campaign_id": campaign_id, "title": title, "posts": posts, "saved_posts": created_posts, "generated_posts": created_posts, **generation})
+
+
+@app.route("/api/import", methods=["POST"])
+def api_import():
+    """Save posts written elsewhere (for example by the user's AI agent) as a campaign."""
+    init_db()
+    data = request.get_json(silent=True) or {}
+    posts = data.get("posts")
+    if not isinstance(posts, dict) or not posts:
+        return jsonify({"error": "posts must be a non-empty object keyed by platform."}), 400
+    title = (data.get("title") or "Untitled Campaign").strip()
+    posts, trimmed = enforce_limits(posts)
+    campaign_id = save_campaign(title, data.get("content") or "")
+    created_posts = save_generated_posts(campaign_id, posts)
+    return jsonify({"campaign_id": campaign_id, "title": title, "posts": posts, "saved_posts": created_posts, "provider": "import", "fallback_used": False, "fallback_reason": None, "trimmed": trimmed})
 
 
 @app.route("/api/schedule", methods=["POST"])

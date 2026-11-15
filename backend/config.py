@@ -22,6 +22,8 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    brand_voice: str = os.getenv("BRAND_VOICE", "")
+    brand_audience: str = os.getenv("BRAND_AUDIENCE", "")
     generation_temperature: float = float(os.getenv("AI_TEMPERATURE", "0.7"))
     generation_max_tokens: int = int(os.getenv("AI_MAX_TOKENS", "900"))
     enable_twitter: bool = os.getenv("ENABLE_TWITTER", "true").lower() == "true"

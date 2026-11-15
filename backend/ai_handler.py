@@ -78,13 +78,7 @@ Return only valid JSON with this shape:
 def generate_with_ollama(original_content: str) -> Dict[str, Any]:
     payload = {
         "model": settings.ollama_model,
-        "prompt": (
-            "You are a social media expert. Turn the blog content into structured platform posts. "
-            "Return only valid JSON with keys twitter, linkedin, telegram, email, instagram. "
-            "Twitter should contain exactly 5 items. LinkedIn exactly 2. Telegram exactly 3. Instagram exactly 1. "
-            "Email must be an object with subject and body. Keep each item platform-appropriate.\n\n"
-            f"Blog content:\n{original_content}"
-        ),
+        "prompt": f"{_instructions()}\n\nBlog content:\n{original_content}",
         "stream": False,
         "format": "json",
         "options": {
@@ -142,6 +136,49 @@ SHARED_INSTRUCTIONS = (
 EXPECTED_KEYS = ("twitter", "linkedin", "telegram", "email", "instagram")
 
 
+def _instructions() -> str:
+    """Shared instructions plus length limits and the optional brand voice from .env."""
+    limits = " ".join(
+        f"Each {name} item must be at most {spec['max_chars']} characters." for name, spec in PLATFORM_SPECS.items()
+    )
+    parts = [SHARED_INSTRUCTIONS, limits]
+    if settings.brand_voice:
+        parts.append(f"Write in this brand voice: {settings.brand_voice}.")
+    if settings.brand_audience:
+        parts.append(f"The audience is: {settings.brand_audience}.")
+    return " ".join(parts)
+
+
+def _trim(text: str, limit: int) -> str:
+    """Cut at a word boundary and end with an ellipsis so the result fits the limit."""
+    if len(text) <= limit:
+        return text
+    cut = text[: limit - 1]
+    if " " in cut[limit // 2 :]:
+        cut = cut[: cut.rfind(" ")]
+    return cut.rstrip(" ,;:-") + "\u2026"
+
+
+def enforce_limits(posts: Dict[str, Any]) -> tuple[Dict[str, Any], int]:
+    """Make every post fit its platform limit. Returns (posts, number of items trimmed)."""
+    trimmed = 0
+    cleaned: Dict[str, Any] = {}
+    for platform, value in posts.items():
+        spec = PLATFORM_SPECS.get(platform)
+        if spec is None or platform == "email":
+            cleaned[platform] = value
+            continue
+        items = value if isinstance(value, list) else [value]
+        fitted = []
+        for item in items:
+            text = item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+            short = _trim(text.strip(), spec["max_chars"])
+            trimmed += short != text.strip()
+            fitted.append(short)
+        cleaned[platform] = fitted
+    return cleaned, trimmed
+
+
 def _validate_posts(posts: Any) -> Dict[str, Any]:
     """Reject model output that has none of the expected platform keys."""
     if not isinstance(posts, dict) or not any(posts.get(key) for key in EXPECTED_KEYS):
@@ -156,7 +193,7 @@ def generate_with_openai(original_content: str) -> Dict[str, Any]:
     payload = {
         "model": settings.openai_model,
         "messages": [
-            {"role": "system", "content": SHARED_INSTRUCTIONS},
+            {"role": "system", "content": _instructions()},
             {"role": "user", "content": f"Blog content:\n{original_content}"},
         ],
         "temperature": settings.generation_temperature,
@@ -174,7 +211,7 @@ def generate_with_openai(original_content: str) -> Dict[str, Any]:
     return _clean_json_response(raw_text)
 
 
-def generate_posts_with_meta(original_content: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+def _generate_raw(original_content: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
     """Return (posts, meta). meta says which provider ran and whether template fallback was used."""
     provider = settings.ai_provider.lower()
     meta: Dict[str, Any] = {"provider": provider, "fallback_used": False, "fallback_reason": None}
@@ -209,6 +246,13 @@ def generate_posts_with_meta(original_content: str) -> tuple[Dict[str, Any], Dic
             return _fallback(f"HuggingFace generation failed: {exc}")
 
     return _fallback(f"Unknown AI_PROVIDER '{provider}'. Use ollama, openai or huggingface.")
+
+
+def generate_posts_with_meta(original_content: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """Return (posts, meta). meta: provider, fallback_used, fallback_reason, trimmed."""
+    posts, meta = _generate_raw(original_content)
+    posts, meta["trimmed"] = enforce_limits(posts)
+    return posts, meta
 
 
 def generate_posts(original_content: str) -> Dict[str, Any]:

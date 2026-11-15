@@ -27,7 +27,7 @@
           <strong>{{ post.platform|title }}</strong>
           <span>{{ post.status }}</span>
         </div>
-        <p>{{ post.edited_content or post.generated_content }}</p>
+        <p style="white-space: pre-line;">{{ (post.edited_content or post.generated_content)|readable }}</p>
         {% if post.post_url %}<a href="{{ post.post_url }}" target="_blank">Open post</a>{% endif %}
       </div>
       {% endfor %}
